@@ -12,11 +12,12 @@
 
 #define N 20
 #define M 26
+#define INPUT_BUF_LEN 10
 
 struct termios origterm;
 typedef struct Game {
   int grid[N][M];
-  char input[10];
+  char input[INPUT_BUF_LEN];
 } Game;
 
 Game *game;
@@ -41,10 +42,12 @@ void setup(void) {
   tcgetattr(STDIN_FILENO, &origterm);
   raw = origterm;
 
-  // Disable canonical and echo mode
-  raw.c_lflag &= ~(ICANON | ECHO);
-  raw.c_cc[VMIN] = 0;  // Not blocking
-  raw.c_cc[VTIME] = 0; // No timeout
+  raw.c_lflag &= ~(ICANON | ECHO); // Disable canonical and echo mode
+  raw.c_cc[VMIN] = 0;              // Not blocking
+  raw.c_cc[VTIME] = 0;             // No timeout
+
+  // Apply changes
+  tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
 
   atexit(cleanup);
 
@@ -56,10 +59,14 @@ void setup(void) {
 }
 
 void update(void) {
-  char *c;
+  char c;
   if (read(STDIN_FILENO, &c, 1) == 1) {
-    printf("sdf");
-    // game->input[strlen(game->input)] = *c;
+    // Handle input character c
+    int s = strlen(game->input);
+    if (s < INPUT_BUF_LEN - 1) {
+      game->input[s] = c;
+      game->input[s + 1] = '\0';
+    }
   }
 }
 
@@ -79,7 +86,8 @@ void draw(void) {
   }
   printf("\n");
 
-  // Draw play
+  // Draw input buf
+  printf("%s\n", game->input);
 }
 
 int main(void) {
@@ -88,6 +96,6 @@ int main(void) {
   while (1) {
     update();
     draw();
-    // sleep(1);
+    usleep(16666); // ~60 FPS (1/60 second = 16.666ms)
   }
 }
