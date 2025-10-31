@@ -100,17 +100,21 @@ void setup(void) {
 
 void update(void) {
   char c;
+  Pos pos;
+  int moveDone = 0;
+
   if (read(STDIN_FILENO, &c, 1) == 1) {
-    // Reset failedInput
+    // Reset vars
     game->failedInput = 0;
 
     if (c == '\n') {
       fprintf(logfile, "-----\n");
-      const Pos pos = parseInput();
+      pos = parseInput();
       fprintf(logfile, "Pos %d, %d\n", pos.x, pos.y);
       if (game->failedInput == 1) {
         fprintf(logfile, "Failed pos\n");
       }
+      moveDone = 1;
       fflush(logfile);
       memset(game->input, 0, INPUT_BUF_LEN);
     } else {
@@ -120,6 +124,10 @@ void update(void) {
         game->input[s + 1] = '\0';
       }
     }
+  }
+
+  if (moveDone) {
+    game->grid[pos.x][pos.y] = 1;
   }
 }
 
@@ -133,7 +141,7 @@ void draw(void) {
   for (int i = 0; i < N; i++) {
     printf(" %02d |", i + 1);
     for (int j = 0; j < M; j++) {
-      printf(" %d", game->grid[i][j]);
+      printf(" %c", game->grid[i][j] ? 'X' : '.');
     }
     printf("\n");
   }
