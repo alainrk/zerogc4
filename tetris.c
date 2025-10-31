@@ -15,9 +15,15 @@
 #define INPUT_BUF_LEN 10
 
 struct termios origterm;
+
+typedef struct Pos {
+  int x, y;
+} Pos;
+
 typedef struct Game {
   int grid[N][M];
   char input[INPUT_BUF_LEN];
+  int failedInput;
 } Game;
 
 Game *game;
@@ -31,6 +37,31 @@ void cleanup(void) {
 void signal_hander(int signum) {
   cleanup();
   exit(0);
+}
+
+Pos parseInput() {
+  Pos p = {-1, -1};
+  int x;
+  char ys;
+
+  if (sscanf(game->input, " %d %c", &x, &ys) == 2) {
+    p.x = x;
+    if (ys >= 'A' && ys <= 'Z') {
+      p.y = ys - 'A';
+    } else if (ys >= 'a' && ys <= 'z') {
+      p.y = ys - 'a';
+    } else {
+      game->failedInput = 1;
+      return p;
+    }
+  }
+
+  if ((p.x < 0 || p.x >= N) || (p.y >= M)) {
+    game->failedInput = 1;
+    return p;
+  }
+
+  return p;
 }
 
 void setup(void) {
@@ -56,16 +87,23 @@ void setup(void) {
 
   game = malloc(sizeof(Game));
   memset(game->grid, 0, M * N * sizeof(int));
+  game->failedInput = 0;
 }
 
 void update(void) {
   char c;
   if (read(STDIN_FILENO, &c, 1) == 1) {
-    // Handle input character c
-    int s = strlen(game->input);
-    if (s < INPUT_BUF_LEN - 1) {
-      game->input[s] = c;
-      game->input[s + 1] = '\0';
+    if (c == '\n') {
+      const Pos pos = parseInput();
+      if (game->failedInput == 1) {
+        memset(game->input, 0, INPUT_BUF_LEN);
+      }
+    } else {
+      int s = strlen(game->input);
+      if (s < INPUT_BUF_LEN - 1) {
+        game->input[s] = c;
+        game->input[s + 1] = '\0';
+      }
     }
   }
 }
@@ -87,7 +125,7 @@ void draw(void) {
   printf("\n");
 
   // Draw input buf
-  printf("%s\n", game->input);
+  printf("Choose cell (e.g. 8 D <enter>): %s\n", game->input);
 }
 
 int main(void) {
