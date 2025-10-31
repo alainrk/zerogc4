@@ -1,3 +1,4 @@
+#include <math.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,6 +28,7 @@ typedef struct Game {
 } Game;
 
 Game *game;
+FILE *logfile;
 
 void cleanup(void) {
   printf("%s%s%s\n", SHOW_CURSOR, CLEAR_SCREEN, REPOS_CURSOR);
@@ -45,7 +47,7 @@ Pos parseInput() {
   char ys;
 
   if (sscanf(game->input, " %d %c", &x, &ys) == 2) {
-    p.x = x;
+    p.x = x - 1;
     if (ys >= 'A' && ys <= 'Z') {
       p.y = ys - 'A';
     } else if (ys >= 'a' && ys <= 'z') {
@@ -66,6 +68,12 @@ Pos parseInput() {
 
 void setup(void) {
   struct termios raw;
+
+  logfile = fopen("/tmp/tetrislog", "w");
+  if (!logfile) {
+    perror("open logfile");
+  }
+
   signal(SIGINT, signal_hander);
   signal(SIGKILL, signal_hander);
   signal(SIGTERM, signal_hander);
@@ -93,11 +101,18 @@ void setup(void) {
 void update(void) {
   char c;
   if (read(STDIN_FILENO, &c, 1) == 1) {
+    // Reset failedInput
+    game->failedInput = 0;
+
     if (c == '\n') {
+      fprintf(logfile, "-----\n");
       const Pos pos = parseInput();
+      fprintf(logfile, "Pos %d, %d\n", pos.x, pos.y);
       if (game->failedInput == 1) {
-        memset(game->input, 0, INPUT_BUF_LEN);
+        fprintf(logfile, "Failed pos\n");
       }
+      fflush(logfile);
+      memset(game->input, 0, INPUT_BUF_LEN);
     } else {
       int s = strlen(game->input);
       if (s < INPUT_BUF_LEN - 1) {
@@ -125,7 +140,8 @@ void draw(void) {
   printf("\n");
 
   // Draw input buf
-  printf("Choose cell (e.g. 8 D <enter>): %s\n", game->input);
+  printf("Choose cell (e.g. 8 D <enter>): %s\n",
+         game->failedInput ? "Invalid input" : game->input);
 }
 
 int main(void) {
