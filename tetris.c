@@ -43,6 +43,8 @@ void setup(void) {
 
   // Disable canonical and echo mode
   raw.c_lflag &= ~(ICANON | ECHO);
+  raw.c_cc[VMIN] = 0;  // Not blocking
+  raw.c_cc[VTIME] = 0; // No timeout
 
   atexit(cleanup);
 
@@ -53,7 +55,13 @@ void setup(void) {
   memset(game->grid, 0, M * N * sizeof(int));
 }
 
-void update(void) {}
+void update(void) {
+  char *c;
+  if (read(STDIN_FILENO, &c, 1) == 1) {
+    printf("sdf");
+    // game->input[strlen(game->input)] = *c;
+  }
+}
 
 void draw(void) {
   // Draw grid
@@ -80,6 +88,6 @@ int main(void) {
   while (1) {
     update();
     draw();
-    sleep(1);
+    // sleep(1);
   }
 }
