@@ -118,44 +118,57 @@ int checkWin(void) {
     for (int j = 0; j < M; j++) {
       if (game->grid[i][j] == 0)
         continue;
-      int n = game->grid[i][j];
+
+      int player = game->grid[i][j];
 
       // Horiz
       inarow = 1;
       int maxh = j + 3;
       for (int h = j + 1; h <= maxh && h < M; h++) {
-        if (game->grid[i][h] == n)
+        if (game->grid[i][h] == player)
           inarow++;
       }
       if (inarow == 4)
-        return n;
+        return player;
 
       // Vert
       inarow = 1;
       int maxv = i + 3;
-      for (int v = j + 1; v <= maxv && v < N; v++) {
-        if (game->grid[v][j] == n)
+      for (int v = i + 1; v <= maxv && v < N; v++) {
+        if (game->grid[v][j] == player)
           inarow++;
       }
       if (inarow == 4)
-        return n;
+        return player;
 
-      // Diag
+      // Diag down-right
       inarow = 1;
-      for (int h = i + 1, v = j + 1; h <= maxh && v <= maxv && v < N && h < M;
+      maxv = i + 3;
+      maxh = j + 3;
+      for (int h = j + 1, v = i + 1; h <= maxh && v <= maxv && v < N && h < M;
            v++, h++) {
-        if (game->grid[v][h] == n)
+        if (game->grid[v][h] == player)
           inarow++;
       }
       if (inarow == 4)
-        return n;
+        return player;
+
+      // Diag down-left
+      inarow = 1;
+      maxv = i + 3;
+      int minh = j - 3;
+      for (int h = j - 1, v = i + 1; h >= minh && v <= maxv && v < N && h >= 0;
+           v++, h--) {
+        if (game->grid[v][h] == player)
+          inarow++;
+      }
+      if (inarow == 4)
+        return player;
     }
   }
 
   return 0;
 }
-
-void aiPlay(void) {}
 
 void update(void) {
   char c;
