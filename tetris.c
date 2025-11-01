@@ -39,14 +39,17 @@ void llog(const char *format, ...) {
   va_end(args);
 }
 
-void cleanup(void) {
+void teardown(void) {
   printf("%s%s%s\n", SHOW_CURSOR, CLEAR_SCREEN, REPOS_CURSOR);
   fflush(stdout);
+  if (logfile)
+    fclose(logfile);
+  free(game);
   tcsetattr(STDIN_FILENO, TCSAFLUSH, &origterm);
 }
 
 void signal_hander(int signum) {
-  cleanup();
+  teardown();
   exit(0);
 }
 
@@ -97,7 +100,7 @@ void setup(void) {
   // Apply changes
   tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
 
-  atexit(cleanup);
+  atexit(teardown);
 
   printf("%s%s%s", HIDE_CURSOR, CLEAR_SCREEN, REPOS_CURSOR);
   fflush(stdout);
