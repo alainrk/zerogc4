@@ -108,6 +108,55 @@ void setup(void) {
   game->failedInput = 0;
 }
 
+// Returns:
+// - 0 if no one won
+// - 1 if player won
+// - 2 if ai won
+int checkWin(void) {
+  int inarow = 0;
+  for (int i = 0; i < N; i++) {
+    for (int j = 0; j < M; j++) {
+      if (game->grid[i][j] == 0)
+        continue;
+      int n = game->grid[i][j];
+
+      // Horiz
+      inarow = 1;
+      int maxh = j + 3;
+      for (int h = j + 1; h <= maxh && h < M; h++) {
+        if (game->grid[i][h] == n)
+          inarow++;
+      }
+      if (inarow == 4)
+        return n;
+
+      // Vert
+      inarow = 1;
+      int maxv = i + 3;
+      for (int v = j + 1; v <= maxv && v < N; v++) {
+        if (game->grid[v][j] == n)
+          inarow++;
+      }
+      if (inarow == 4)
+        return n;
+
+      // Diag
+      inarow = 1;
+      for (int h = i + 1, v = j + 1; h <= maxh && v <= maxv && v < N && h < M;
+           v++, h++) {
+        if (game->grid[v][h] == n)
+          inarow++;
+      }
+      if (inarow == 4)
+        return n;
+    }
+  }
+
+  return 0;
+}
+
+void aiPlay(void) {}
+
 void update(void) {
   char c;
   Pos pos;
@@ -118,7 +167,7 @@ void update(void) {
     game->failedInput = 0;
     game->invalidMove = 0;
 
-    llog("Current input: '%s'", game->input);
+    llog("Current input: '%s'\n", game->input);
 
     switch (c) {
     // Backwards to delete last char
@@ -156,6 +205,11 @@ void update(void) {
       return;
     }
     game->grid[pos.x][pos.y] = 1;
+
+    int won = checkWin();
+    if (won > 0) {
+      llog("Player %d has WON!!!\n", won);
+    }
   }
 }
 
