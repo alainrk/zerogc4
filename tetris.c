@@ -25,6 +25,7 @@ typedef struct Game {
   int grid[N][M];
   char input[INPUT_BUF_LEN];
   int failedInput;
+  int invalidMove;
 } Game;
 
 Game *game;
@@ -114,8 +115,19 @@ void update(void) {
   if (read(STDIN_FILENO, &c, 1) == 1) {
     // Reset vars
     game->failedInput = 0;
+    game->invalidMove = 0;
+
+    llog("Current input: '%s'", game->input);
 
     switch (c) {
+    // Backwards to delete last char
+    case 127: {
+      int s = strlen(game->input);
+      if (s > 0) {
+        game->input[s - 1] = '\0';
+      }
+      break;
+    }
     case '\n': {
       llog("-----\n");
       pos = parseInput();
@@ -137,6 +149,10 @@ void update(void) {
   }
 
   if (moveDone) {
+    if (game->grid[pos.x][pos.y] > 0) {
+      game->invalidMove = 1;
+      return;
+    }
     game->grid[pos.x][pos.y] = 1;
   }
 }
@@ -159,7 +175,9 @@ void draw(void) {
 
   // Draw input buf
   printf("Choose cell (e.g. 8 D <enter>): %s\n",
-         game->failedInput ? "Invalid input" : game->input);
+         game->invalidMove
+             ? "Cell already set"
+             : (game->failedInput ? "Invalid input" : game->input));
 }
 
 int main(void) {
