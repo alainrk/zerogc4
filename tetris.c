@@ -104,6 +104,7 @@ void setup(void) {
 
   game = malloc(sizeof(Game));
   memset(game->grid, 0, M * N * sizeof(int));
+  memset(game->input, 0, INPUT_BUF_LEN);
   game->failedInput = 0;
 }
 
@@ -137,6 +138,7 @@ void update(void) {
       }
       moveDone = 1;
       memset(game->input, 0, INPUT_BUF_LEN);
+      break;
     }
     default: {
       int s = strlen(game->input);
