@@ -1,5 +1,5 @@
-#include <math.h>
 #include <signal.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -29,6 +29,14 @@ typedef struct Game {
 
 Game *game;
 FILE *logfile;
+
+void llog(const char *format, ...) {
+  va_list args;
+  va_start(args, format);
+  vfprintf(logfile, format, args);
+  fflush(logfile);
+  va_end(args);
+}
 
 void cleanup(void) {
   printf("%s%s%s\n", SHOW_CURSOR, CLEAR_SCREEN, REPOS_CURSOR);
@@ -107,22 +115,24 @@ void update(void) {
     // Reset vars
     game->failedInput = 0;
 
-    if (c == '\n') {
-      fprintf(logfile, "-----\n");
+    switch (c) {
+    case '\n': {
+      llog("-----\n");
       pos = parseInput();
-      fprintf(logfile, "Pos %d, %d\n", pos.x, pos.y);
+      llog("Pos %d, %d\n", pos.x, pos.y);
       if (game->failedInput == 1) {
-        fprintf(logfile, "Failed pos\n");
+        llog("Failed pos\n");
       }
       moveDone = 1;
-      fflush(logfile);
       memset(game->input, 0, INPUT_BUF_LEN);
-    } else {
+    }
+    default: {
       int s = strlen(game->input);
       if (s < INPUT_BUF_LEN - 1) {
         game->input[s] = c;
         game->input[s + 1] = '\0';
       }
+    }
     }
   }
 
