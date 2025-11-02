@@ -11,8 +11,8 @@
 #define HIDE_CURSOR "\033[?25l"
 #define SHOW_CURSOR "\033[?25h"
 
-#define N 20
-#define M 26
+#define N 10
+#define M 10
 #define INPUT_BUF_LEN 10
 
 struct termios origterm;
@@ -135,20 +135,20 @@ void setup(void) {
 // - 0 if no one won
 // - 1 if player won
 // - 2 if ai won
-int checkWin(void) {
+int checkWin(int grid[N][M]) {
   int inarow = 0;
   for (int i = 0; i < N; i++) {
     for (int j = 0; j < M; j++) {
-      if (game->grid[i][j] == 0)
+      if (grid[i][j] == 0)
         continue;
 
-      int player = game->grid[i][j];
+      int player = grid[i][j];
 
       // Horiz
       inarow = 1;
       int maxh = j + 3;
       for (int h = j + 1; h <= maxh && h < M; h++) {
-        if (game->grid[i][h] == player)
+        if (grid[i][h] == player)
           inarow++;
       }
       if (inarow == 4)
@@ -158,7 +158,7 @@ int checkWin(void) {
       inarow = 1;
       int maxv = i + 3;
       for (int v = i + 1; v <= maxv && v < N; v++) {
-        if (game->grid[v][j] == player)
+        if (grid[v][j] == player)
           inarow++;
       }
       if (inarow == 4)
@@ -170,7 +170,7 @@ int checkWin(void) {
       maxh = j + 3;
       for (int h = j + 1, v = i + 1; h <= maxh && v <= maxv && v < N && h < M;
            v++, h++) {
-        if (game->grid[v][h] == player)
+        if (grid[v][h] == player)
           inarow++;
       }
       if (inarow == 4)
@@ -182,7 +182,7 @@ int checkWin(void) {
       int minh = j - 3;
       for (int h = j - 1, v = i + 1; h >= minh && v <= maxv && v < N && h >= 0;
            v++, h--) {
-        if (game->grid[v][h] == player)
+        if (grid[v][h] == player)
           inarow++;
       }
       if (inarow == 4)
@@ -242,7 +242,7 @@ void update(void) {
     }
     game->grid[pos.x][pos.y] = 1;
 
-    int won = checkWin();
+    int won = checkWin(game->grid);
     if (won > 0) {
       llog("Player %d has WON!!!\n", won);
     }
