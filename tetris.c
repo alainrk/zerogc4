@@ -102,11 +102,19 @@ int assignScoreToGrid(int grid[N][M]) {
   int inarow = 0;
   int player = 0;
   int scores[2] = {0, 0};
-  int score;
 
   unsigned short int visited[2][N][M];
 
   memset(visited, 0, 2 * sizeof(unsigned short int) * N * M);
+
+  llog("\n=== assignScoreToGrid called ===\n");
+  for (int i = 0; i < N; i++) {
+    for (int j = 0; j < M; j++) {
+      if (grid[i][j] > 0)
+        llog("[%d][%d]=%d ", i, j, grid[i][j]);
+    }
+  }
+  llog("\n");
 
   for (int i = 0; i < N; i++) {
     for (int j = 0; j < M; j++) {
@@ -115,19 +123,16 @@ int assignScoreToGrid(int grid[N][M]) {
 
       player = grid[i][j];
 
-      // Don't recalculate from here for this player again
-      if (visited[player - 1][i][j])
-        continue;
-
-      visited[player - 1][i][j] = 1;
-
       // Horiz
       inarow = 1;
+      llog("Checking horiz from [%d][%d], player=%d\n", i, j, player);
       for (int h = j + 1; h < M; h++) {
-        visited[player - 1][i][h] = 1;
+        llog("  Checking [%d][%d], grid=%d, inarow=%d\n", i, h, grid[i][h], inarow);
         if (grid[i][h] == player) {
+          visited[player - 1][i][h] = 1;
           inarow++;
           scores[player - 1] += MULTIPLIER_IN_A_ROW * inarow;
+          llog("  Match! inarow now=%d\n", inarow);
           if (inarow == 4)
             goto won;
         } else if (grid[i][h] == 0) {
@@ -135,14 +140,15 @@ int assignScoreToGrid(int grid[N][M]) {
           scores[player - 1] += 1;
         } else {
           inarow = 0;
+          break;
         }
       }
 
       // Vert
       inarow = 1;
       for (int v = i + 1; v < N; v++) {
-        visited[player - 1][v][j] = 1;
         if (grid[v][j] == player) {
+          visited[player - 1][v][j] = 1;
           inarow++;
           scores[player - 1] += MULTIPLIER_IN_A_ROW * inarow;
           if (inarow == 4)
@@ -152,16 +158,20 @@ int assignScoreToGrid(int grid[N][M]) {
           scores[player - 1] += 1;
         } else {
           inarow = 0;
+          break;
         }
       }
 
       // Diag down-right
       inarow = 1;
+      llog("Checking diag down-right from [%d][%d], player=%d\n", i, j, player);
       for (int h = j + 1, v = i + 1; v < N && h < M; v++, h++) {
-        visited[player - 1][v][h] = 1;
+        llog("  Checking [%d][%d], grid=%d, inarow=%d\n", v, h, grid[v][h], inarow);
         if (grid[v][h] == player) {
+          visited[player - 1][v][h] = 1;
           inarow++;
           scores[player - 1] += MULTIPLIER_IN_A_ROW * inarow;
+          llog("  Match! inarow now=%d\n", inarow);
           if (inarow == 4)
             goto won;
         } else if (grid[v][h] == 0) {
@@ -169,14 +179,15 @@ int assignScoreToGrid(int grid[N][M]) {
           scores[player - 1] += 1;
         } else {
           inarow = 0;
+          break;
         }
       }
 
       // Diag down-left
       inarow = 1;
       for (int h = j - 1, v = i + 1; v < N && h >= 0; v++, h--) {
-        visited[player - 1][v][h] = 1;
         if (grid[v][h] == player) {
+          visited[player - 1][v][h] = 1;
           inarow++;
           scores[player - 1] += MULTIPLIER_IN_A_ROW * inarow;
           if (inarow == 4)
@@ -186,14 +197,15 @@ int assignScoreToGrid(int grid[N][M]) {
           scores[player - 1] += 1;
         } else {
           inarow = 0;
+          break;
         }
       }
     }
   }
 
-  score = scores[1] - scores[0];
+  // score = scores[1] - scores[0];
   // llog("Score: %d\n", score);
-  return 0;
+  return scores[1] - scores[0];
 
 won:
   return player == 0 ? 0 : (player == 1 ? -1000 : 1000);
@@ -230,7 +242,11 @@ Pos aiPlay(void) {
 
 int checkWin(int grid[N][M]) {
   int score = assignScoreToGrid(grid);
-  return score == 0 ? 0 : (score == -1000 ? 1 : 2);
+  if (score == -1000)
+    return 1;
+  if (score == 1000)
+    return 2;
+  return 0;
 }
 
 void setup(void) {
@@ -278,7 +294,7 @@ void update(void) {
     game->failedInput = 0;
     game->invalidMove = 0;
 
-    llog("Current input: '%s'\n", game->input);
+    // llog("Current input: '%s'\n", game->input);
 
     switch (c) {
     // Backwards to delete last char
@@ -322,10 +338,17 @@ void update(void) {
     game->grid[pos.x][pos.y] = 1;
     game->moveNo++;
 
+    int winningPlayer = checkWin(game->grid);
+    if (winningPlayer) {
+      game->won = winningPlayer;
+      llog("%s won!!!\n", winningPlayer == 1 ? "You" : "AI");
+      return;
+    }
+
     Pos aiPos = aiPlay();
     game->grid[aiPos.x][aiPos.y] = 2;
 
-    int winningPlayer = checkWin(game->grid);
+    winningPlayer = checkWin(game->grid);
     if (winningPlayer) {
       game->won = winningPlayer;
       llog("%s won!!!\n", winningPlayer == 1 ? "You" : "AI");
