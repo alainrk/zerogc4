@@ -66,6 +66,10 @@ Pos aiPosition(void) {
   return p;
 }
 
+int isValidMove(int x, int y, int grid[N][M]) {
+  return (x >= 0 && x < N && y >= 0 && y < M && grid[x][y] == 0);
+}
+
 Pos parseInput(void) {
   Pos p = {-1, -1};
   int x;
@@ -236,7 +240,7 @@ void update(void) {
   }
 
   if (moveDone) {
-    if (game->grid[pos.x][pos.y] > 0) {
+    if (!isValidMove(pos.x, pos.y, game->grid)) {
       game->invalidMove = 1;
       return;
     }
@@ -266,9 +270,9 @@ void draw(void) {
   printf("\n");
 
   // Draw input buf
-  printf("Choose cell (e.g. 8 D <enter>): %s\n",
+  printf("Your move: %s\n",
          game->invalidMove
-             ? "Cell already set"
+             ? "Invalid move, cell alreay set or out of bound."
              : (game->failedInput ? "Invalid input" : game->input));
 }
 
