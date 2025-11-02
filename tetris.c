@@ -28,6 +28,7 @@ typedef struct Game {
   char input[INPUT_BUF_LEN];
   int failedInput;
   int invalidMove;
+  int moveNo;
   int won;
 } Game;
 
@@ -55,18 +56,6 @@ void signal_hander(int signum) {
   (void)signum;
   teardown();
   exit(0);
-}
-
-Pos aiPosition(void) {
-  Pos p = {-1, -1};
-
-  // For each possible valid ai move
-  // Calculate the possible move of the opponent in response
-  // Repeat down for N depth level
-  // Calculate the score of this game
-  // Choose the next move based on that
-
-  return p;
 }
 
 int isValidMove(int x, int y, int grid[N][M]) {
@@ -203,11 +192,40 @@ int assignScoreToGrid(int grid[N][M]) {
   }
 
   score = scores[1] - scores[0];
-  llog("Score: %d\n", score);
+  // llog("Score: %d\n", score);
   return 0;
 
 won:
   return player == 0 ? 0 : (player == 1 ? -1000 : 1000);
+}
+
+Pos aiPlay(void) {
+  Pos p = {-1, -1};
+  int max = -1001;
+
+  // For each possible valid ai move
+  // Calculate the possible move of the opponent in response
+  // Repeat down for N depth level
+  // Calculate the score of this game
+  // Choose the next move based on that
+
+  int newGrid[N][M];
+  for (int i = 0; i < N; i++) {
+    for (int j = 0; j < M; j++) {
+      if (game->grid[i][j] > 0)
+        continue;
+      memcpy(newGrid, game->grid, N * M * sizeof(int));
+      newGrid[i][j] = 2;
+      int score = assignScoreToGrid(newGrid);
+      if (score > max) {
+        max = score;
+        p.x = i;
+        p.y = j;
+      }
+    }
+  }
+
+  return p;
 }
 
 int checkWin(int grid[N][M]) {
@@ -247,6 +265,7 @@ void setup(void) {
   memset(game->input, 0, INPUT_BUF_LEN);
   game->failedInput = 0;
   game->won = 0;
+  game->moveNo = 0;
 }
 
 void update(void) {
@@ -301,6 +320,10 @@ void update(void) {
       return;
     }
     game->grid[pos.x][pos.y] = 1;
+    game->moveNo++;
+
+    Pos aiPos = aiPlay();
+    game->grid[aiPos.x][aiPos.y] = 2;
 
     int winningPlayer = checkWin(game->grid);
     if (winningPlayer) {
@@ -318,7 +341,7 @@ void drawGrid(int grid[N][M]) {
   for (int i = 0; i < N; i++) {
     printf(" %02d |", i + 1);
     for (int j = 0; j < M; j++) {
-      printf(" %c", grid[i][j] ? 'X' : '.');
+      printf(" %c", grid[i][j] == 0 ? '.' : (grid[i][j] == 1 ? 'X' : 'O'));
     }
     printf("\n");
   }
