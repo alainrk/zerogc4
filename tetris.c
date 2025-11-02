@@ -107,22 +107,13 @@ Pos parseInput(void) {
 
 // Assign a score (negative -> good for user, positive -> good for AI)
 // The assignment is based on the given status of the grid
-// The heuristic is very simple and works as follow:
-// - Going Top -> Bottom, Left -> Right
-// - If we are on a cell of user X, it keeps on every direction
-//   (Right, Down, Down-Right, Down-Left).
-//  - We set the "local" score to 1
-//  - We set a multiplier starting at 1
-//  - At each step the totalScore for the current user is incremented as
-//  follows:
-//      - userScore += (localScore * multiplier)
-//  - If we are on a empty cell the multiplier returns to 1
-//  - If we are on a sequence, the multiplier is incremented by 0.5
-//  - If we are on a opponent-filled sequence
+// The heuristic is very simple, it assigns a score based on how many
+// in-a-row and interruptions there are for each users on the valid paths.
 int assignScoreToGrid(int grid[N][M]) {
   int inarow = 0;
   int player = 0;
-  int score[2] = {0, 0};
+  int scores[2] = {0, 0};
+  int score;
 
   unsigned short int visited[2][N][M];
 
@@ -147,12 +138,12 @@ int assignScoreToGrid(int grid[N][M]) {
         visited[player - 1][i][h] = 1;
         if (grid[i][h] == player) {
           inarow++;
-          score[player - 1] += MULTIPLIER_IN_A_ROW * inarow;
+          scores[player - 1] += MULTIPLIER_IN_A_ROW * inarow;
           if (inarow == 4)
             goto won;
         } else if (grid[i][h] == 0) {
           inarow = 0;
-          score[player - 1] += 1;
+          scores[player - 1] += 1;
         } else {
           inarow = 0;
         }
@@ -164,12 +155,12 @@ int assignScoreToGrid(int grid[N][M]) {
         visited[player - 1][v][j] = 1;
         if (grid[v][j] == player) {
           inarow++;
-          score[player - 1] += MULTIPLIER_IN_A_ROW * inarow;
+          scores[player - 1] += MULTIPLIER_IN_A_ROW * inarow;
           if (inarow == 4)
             goto won;
         } else if (grid[v][j] == 0) {
           inarow = 0;
-          score[player - 1] += 1;
+          scores[player - 1] += 1;
         } else {
           inarow = 0;
         }
@@ -181,12 +172,12 @@ int assignScoreToGrid(int grid[N][M]) {
         visited[player - 1][v][h] = 1;
         if (grid[v][h] == player) {
           inarow++;
-          score[player - 1] += MULTIPLIER_IN_A_ROW * inarow;
+          scores[player - 1] += MULTIPLIER_IN_A_ROW * inarow;
           if (inarow == 4)
             goto won;
         } else if (grid[v][h] == 0) {
           inarow = 0;
-          score[player - 1] += 1;
+          scores[player - 1] += 1;
         } else {
           inarow = 0;
         }
@@ -198,12 +189,12 @@ int assignScoreToGrid(int grid[N][M]) {
         visited[player - 1][v][h] = 1;
         if (grid[v][h] == player) {
           inarow++;
-          score[player - 1] += MULTIPLIER_IN_A_ROW * inarow;
+          scores[player - 1] += MULTIPLIER_IN_A_ROW * inarow;
           if (inarow == 4)
             goto won;
         } else if (grid[v][h] == 0) {
           inarow = 0;
-          score[player - 1] += 1;
+          scores[player - 1] += 1;
         } else {
           inarow = 0;
         }
@@ -211,74 +202,8 @@ int assignScoreToGrid(int grid[N][M]) {
     }
   }
 
-  // TODO
-  return 0;
-
-won:
-  return player == 0 ? 0 : (player == 1 ? -1000 : 1000);
-}
-
-// Returns a number from -1000 to 1000.
-//  - Negative number if the user is in advantage
-//  - Positive number if the AI is in advantage
-// |res| == 1000 if either the user or the AI has won in the grid.
-int _assignScoreToGrid(int grid[N][M]) {
-  int inarow = 0;
-  int player = 0;
-
-  for (int i = 0; i < N; i++) {
-    for (int j = 0; j < M; j++) {
-      if (grid[i][j] == 0)
-        continue;
-
-      player = grid[i][j];
-
-      // Horiz
-      inarow = 1;
-      int maxh = j + 3;
-      for (int h = j + 1; h <= maxh && h < M; h++) {
-        if (grid[i][h] == player)
-          inarow++;
-      }
-      if (inarow == 4)
-        goto won;
-
-      // Vert
-      inarow = 1;
-      int maxv = i + 3;
-      for (int v = i + 1; v <= maxv && v < N; v++) {
-        if (grid[v][j] == player)
-          inarow++;
-      }
-      if (inarow == 4)
-        goto won;
-
-      // Diag down-right
-      inarow = 1;
-      maxv = i + 3;
-      maxh = j + 3;
-      for (int h = j + 1, v = i + 1; h <= maxh && v <= maxv && v < N && h < M;
-           v++, h++) {
-        if (grid[v][h] == player)
-          inarow++;
-      }
-      if (inarow == 4)
-        goto won;
-
-      // Diag down-left
-      inarow = 1;
-      maxv = i + 3;
-      int minh = j - 3;
-      for (int h = j - 1, v = i + 1; h >= minh && v <= maxv && v < N && h >= 0;
-           v++, h--) {
-        if (grid[v][h] == player)
-          inarow++;
-      }
-      if (inarow == 4)
-        goto won;
-    }
-  }
-
+  score = scores[1] - scores[0];
+  llog("Score: %d\n", score);
   return 0;
 
 won:
