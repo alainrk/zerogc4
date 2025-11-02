@@ -253,9 +253,7 @@ void update(void) {
   }
 }
 
-void draw(void) {
-  // Draw grid
-  printf("%s%s\n      ", CLEAR_SCREEN, REPOS_CURSOR);
+void drawGrid(int grid[N][M]) {
   for (int j = 0; j < M && j < 26; j++) {
     printf("%c ", 'A' + j);
   }
@@ -263,10 +261,16 @@ void draw(void) {
   for (int i = 0; i < N; i++) {
     printf(" %02d |", i + 1);
     for (int j = 0; j < M; j++) {
-      printf(" %c", game->grid[i][j] ? 'X' : '.');
+      printf(" %c", grid[i][j] ? 'X' : '.');
     }
     printf("\n");
   }
+}
+
+void draw(void) {
+  // Draw grid
+  printf("%s%s\n      ", CLEAR_SCREEN, REPOS_CURSOR);
+  drawGrid(game->grid);
   printf("\n");
 
   // Draw input buf
