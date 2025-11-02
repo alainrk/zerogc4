@@ -31,10 +31,15 @@ typedef struct Game {
   int invalidMove;
   int moveNo;
   int won;
+  int aiThinking;
+  Pos aiMove;
 } Game;
 
 Game *game;
 FILE *logfile;
+
+// Forward declarations
+void draw(void);
 
 void llog(const char *format, ...) {
 #ifdef LOG_ENABLED
@@ -390,6 +395,9 @@ void setup(void) {
   game->failedInput = 0;
   game->won = 0;
   game->moveNo = 0;
+  game->aiThinking = 0;
+  game->aiMove.x = -1;
+  game->aiMove.y = -1;
 }
 
 void update(void) {
@@ -453,8 +461,14 @@ void update(void) {
       return;
     }
 
+    // Show user's move before AI thinks
+    game->aiThinking = 1;
+    draw();
+
+    // AI computes its move (blocking)
     Pos aiPos = aiPlay();
     game->grid[aiPos.x][aiPos.y] = 2;
+    game->aiThinking = 0;
 
     winningPlayer = checkWin(game->grid);
     if (winningPlayer) {
@@ -488,6 +502,8 @@ void draw(void) {
     printf("You %s\nPress <Enter> to play again.",
            game->won == 1 ? "won!" : "lose...");
     fflush(stdout);
+  } else if (game->aiThinking) {
+    printf("AI thinking...\n");
   } else {
     // Draw input buf
     printf("Your move: %s\n",
