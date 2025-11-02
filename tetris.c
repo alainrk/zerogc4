@@ -107,14 +107,14 @@ int assignScoreToGrid(int grid[N][M]) {
 
   memset(visited, 0, 2 * sizeof(unsigned short int) * N * M);
 
-  llog("\n=== assignScoreToGrid called ===\n");
-  for (int i = 0; i < N; i++) {
-    for (int j = 0; j < M; j++) {
-      if (grid[i][j] > 0)
-        llog("[%d][%d]=%d ", i, j, grid[i][j]);
-    }
-  }
-  llog("\n");
+  // llog("\n=== assignScoreToGrid called ===\n");
+  // for (int i = 0; i < N; i++) {
+  //   for (int j = 0; j < M; j++) {
+  //     if (grid[i][j] > 0)
+  //       llog("[%d][%d]=%d ", i, j, grid[i][j]);
+  //   }
+  // }
+  // llog("\n");
 
   for (int i = 0; i < N; i++) {
     for (int j = 0; j < M; j++) {
@@ -125,14 +125,15 @@ int assignScoreToGrid(int grid[N][M]) {
 
       // Horiz
       inarow = 1;
-      llog("Checking horiz from [%d][%d], player=%d\n", i, j, player);
+      // llog("Checking horiz from [%d][%d], player=%d\n", i, j, player);
       for (int h = j + 1; h < M; h++) {
-        llog("  Checking [%d][%d], grid=%d, inarow=%d\n", i, h, grid[i][h], inarow);
+        // llog("  Checking [%d][%d], grid=%d, inarow=%d\n", i, h, grid[i][h],
+        //      inarow);
         if (grid[i][h] == player) {
           visited[player - 1][i][h] = 1;
           inarow++;
           scores[player - 1] += MULTIPLIER_IN_A_ROW * inarow;
-          llog("  Match! inarow now=%d\n", inarow);
+          // llog("  Match! inarow now=%d\n", inarow);
           if (inarow == 4)
             goto won;
         } else if (grid[i][h] == 0) {
@@ -164,14 +165,16 @@ int assignScoreToGrid(int grid[N][M]) {
 
       // Diag down-right
       inarow = 1;
-      llog("Checking diag down-right from [%d][%d], player=%d\n", i, j, player);
+      // llog("Checking diag down-right from [%d][%d], player=%d\n", i, j,
+      // player);
       for (int h = j + 1, v = i + 1; v < N && h < M; v++, h++) {
-        llog("  Checking [%d][%d], grid=%d, inarow=%d\n", v, h, grid[v][h], inarow);
+        // llog("  Checking [%d][%d], grid=%d, inarow=%d\n", v, h, grid[v][h],
+        //      inarow);
         if (grid[v][h] == player) {
           visited[player - 1][v][h] = 1;
           inarow++;
           scores[player - 1] += MULTIPLIER_IN_A_ROW * inarow;
-          llog("  Match! inarow now=%d\n", inarow);
+          // llog("  Match! inarow now=%d\n", inarow);
           if (inarow == 4)
             goto won;
         } else if (grid[v][h] == 0) {
@@ -203,9 +206,9 @@ int assignScoreToGrid(int grid[N][M]) {
     }
   }
 
-  // score = scores[1] - scores[0];
+  int score = scores[1] - scores[0];
   // llog("Score: %d\n", score);
-  return scores[1] - scores[0];
+  return score;
 
 won:
   return player == 0 ? 0 : (player == 1 ? -1000 : 1000);
