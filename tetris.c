@@ -58,7 +58,14 @@ Pos parseInput() {
   int x;
   char ys;
 
-  if (sscanf(game->input, " %d %c", &x, &ys) == 2) {
+  int res = -1;
+  // First attempt [ROW][COL]
+  res = sscanf(game->input, " %d %c", &x, &ys);
+  // First attempt [COL][ROW]
+  if (res != 2)
+    res = sscanf(game->input, " %c %d", &ys, &x);
+
+  if (res == 2) {
     p.x = x - 1;
     if (ys >= 'A' && ys <= 'Z') {
       p.y = ys - 'A';
