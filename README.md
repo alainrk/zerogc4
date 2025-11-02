@@ -1,4 +1,4 @@
-# 0g Connect 4
+# Zero Gravity Connect Four
 
 No Gravity Connect 4
 
