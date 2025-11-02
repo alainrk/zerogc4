@@ -102,39 +102,6 @@ Pos parseInput(void) {
   return p;
 }
 
-void setup(void) {
-  struct termios raw;
-
-  logfile = fopen("/tmp/tetrislog", "w");
-  if (!logfile) {
-    perror("open logfile");
-  }
-
-  signal(SIGINT, signal_hander);
-  signal(SIGKILL, signal_hander);
-  signal(SIGTERM, signal_hander);
-
-  tcgetattr(STDIN_FILENO, &origterm);
-  raw = origterm;
-
-  raw.c_lflag &= ~(ICANON | ECHO); // Disable canonical and echo mode
-  raw.c_cc[VMIN] = 0;              // Not blocking
-  raw.c_cc[VTIME] = 0;             // No timeout
-
-  // Apply changes
-  tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
-
-  atexit(teardown);
-
-  printf("%s%s%s", HIDE_CURSOR, CLEAR_SCREEN, REPOS_CURSOR);
-  fflush(stdout);
-
-  game = malloc(sizeof(Game));
-  memset(game->grid, 0, M * N * sizeof(int));
-  memset(game->input, 0, INPUT_BUF_LEN);
-  game->failedInput = 0;
-}
-
 // Returns:
 // - 0 if no one won
 // - 1 if player won
@@ -195,6 +162,39 @@ int checkWin(int grid[N][M]) {
   }
 
   return 0;
+}
+
+void setup(void) {
+  struct termios raw;
+
+  logfile = fopen("/tmp/tetrislog", "w");
+  if (!logfile) {
+    perror("open logfile");
+  }
+
+  signal(SIGINT, signal_hander);
+  signal(SIGKILL, signal_hander);
+  signal(SIGTERM, signal_hander);
+
+  tcgetattr(STDIN_FILENO, &origterm);
+  raw = origterm;
+
+  raw.c_lflag &= ~(ICANON | ECHO); // Disable canonical and echo mode
+  raw.c_cc[VMIN] = 0;              // Not blocking
+  raw.c_cc[VTIME] = 0;             // No timeout
+
+  // Apply changes
+  tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
+
+  atexit(teardown);
+
+  printf("%s%s%s", HIDE_CURSOR, CLEAR_SCREEN, REPOS_CURSOR);
+  fflush(stdout);
+
+  game = malloc(sizeof(Game));
+  memset(game->grid, 0, M * N * sizeof(int));
+  memset(game->input, 0, INPUT_BUF_LEN);
+  game->failedInput = 0;
 }
 
 void update(void) {
