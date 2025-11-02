@@ -49,11 +49,24 @@ void teardown(void) {
 }
 
 void signal_hander(int signum) {
+  (void)signum;
   teardown();
   exit(0);
 }
 
-Pos parseInput() {
+Pos aiPosition(void) {
+  Pos p = {-1, -1};
+
+  // For each possible valid ai move
+  // Calculate the possible move of the opponent in response
+  // Repeat down for N depth level
+  // Calculate the score of this game
+  // Choose the next move based on that
+
+  return p;
+}
+
+Pos parseInput(void) {
   Pos p = {-1, -1};
   int x;
   char ys;
