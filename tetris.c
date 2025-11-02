@@ -26,6 +26,7 @@ typedef struct Game {
   char input[INPUT_BUF_LEN];
   int failedInput;
   int invalidMove;
+  int won;
 } Game;
 
 Game *game;
@@ -102,18 +103,20 @@ Pos parseInput(void) {
   return p;
 }
 
-// Returns:
-// - 0 if no one won
-// - 1 if player won
-// - 2 if ai won
-int checkWin(int grid[N][M]) {
+// Returns a number from -1000 to 1000.
+//  - Negative number if the user is in advantage
+//  - Positive number if the AI is in advantage
+// |res| == 1000 if either the user or the AI has won in the grid.
+int assignScoreToGrid(int grid[N][M]) {
   int inarow = 0;
+  int player = 0;
+
   for (int i = 0; i < N; i++) {
     for (int j = 0; j < M; j++) {
       if (grid[i][j] == 0)
         continue;
 
-      int player = grid[i][j];
+      player = grid[i][j];
 
       // Horiz
       inarow = 1;
@@ -123,7 +126,7 @@ int checkWin(int grid[N][M]) {
           inarow++;
       }
       if (inarow == 4)
-        return player;
+        goto won;
 
       // Vert
       inarow = 1;
@@ -133,7 +136,7 @@ int checkWin(int grid[N][M]) {
           inarow++;
       }
       if (inarow == 4)
-        return player;
+        goto won;
 
       // Diag down-right
       inarow = 1;
@@ -145,7 +148,7 @@ int checkWin(int grid[N][M]) {
           inarow++;
       }
       if (inarow == 4)
-        return player;
+        goto won;
 
       // Diag down-left
       inarow = 1;
@@ -157,11 +160,19 @@ int checkWin(int grid[N][M]) {
           inarow++;
       }
       if (inarow == 4)
-        return player;
+        goto won;
     }
   }
 
   return 0;
+
+won:
+  return player == 0 ? 0 : (player == 1 ? -1000 : 1000);
+}
+
+int checkWin(int grid[N][M]) {
+  int score = assignScoreToGrid(grid);
+  return score == 0 ? 0 : (score == -1000 ? 1 : 2);
 }
 
 void setup(void) {
@@ -195,6 +206,7 @@ void setup(void) {
   memset(game->grid, 0, M * N * sizeof(int));
   memset(game->input, 0, INPUT_BUF_LEN);
   game->failedInput = 0;
+  game->won = 0;
 }
 
 void update(void) {
@@ -219,6 +231,10 @@ void update(void) {
       break;
     }
     case '\n': {
+      if (game->won) {
+        setup();
+        return;
+      }
       llog("-----\n");
       pos = parseInput();
       llog("Pos %d, %d\n", pos.x, pos.y);
@@ -246,9 +262,10 @@ void update(void) {
     }
     game->grid[pos.x][pos.y] = 1;
 
-    int won = checkWin(game->grid);
-    if (won > 0) {
-      llog("Player %d has WON!!!\n", won);
+    int winningPlayer = checkWin(game->grid);
+    if (winningPlayer) {
+      game->won = winningPlayer;
+      llog("%s won!!!\n", winningPlayer == 1 ? "You" : "AI");
     }
   }
 }
@@ -273,11 +290,17 @@ void draw(void) {
   drawGrid(game->grid);
   printf("\n");
 
-  // Draw input buf
-  printf("Your move: %s\n",
-         game->invalidMove
-             ? "Invalid move, cell alreay set or out of bound."
-             : (game->failedInput ? "Invalid input" : game->input));
+  if (game->won) {
+    printf("You %s\nPress <Enter> to play again.",
+           game->won == 1 ? "won!" : "lose...");
+    fflush(stdout);
+  } else {
+    // Draw input buf
+    printf("Your move: %s\n",
+           game->invalidMove
+               ? "Invalid move, cell alreay set or out of bound."
+               : (game->failedInput ? "Invalid input" : game->input));
+  }
 }
 
 int main(void) {
