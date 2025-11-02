@@ -7,7 +7,11 @@ Implemented with Minimax alpha-beta pruning
 ## How to
 
 ```bash
-gcc -o game game.c -lpthread -Wall -Wextra
+# Build
+make build
+
+# Run directly with default options
+make run
 ```
 
 ## Usage
@@ -15,13 +19,13 @@ gcc -o game game.c -lpthread -Wall -Wextra
 Run with default depth (6):
 
 ```bash
-./game
+./bin/game
 ```
 
 Run with custom depth:
 
 ```bash
-./game 8
+./bin/game 8
 ```
 
 Valid depth range: 1-12
