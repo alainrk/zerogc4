@@ -1,6 +1,8 @@
 # Zero Gravity Connect Four
 
-No Gravity Connect 4
+<p align="center">
+  <img src="./demo.gif" alt="Demo" height="550px">
+</p>
 
 Implemented with Minimax alpha-beta pruning
 
