@@ -568,7 +568,7 @@ int checkWin(int grid[N][M]) {
 void setup(void) {
   struct termios raw;
 
-  logfile = fopen("/tmp/tetrislog", "w");
+  logfile = fopen("/tmp/zeroglog", "w");
   if (!logfile) {
     perror("open logfile");
   }
