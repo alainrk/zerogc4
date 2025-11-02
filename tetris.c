@@ -16,6 +16,7 @@
 #define INPUT_BUF_LEN 10
 
 #define MULTIPLIER_IN_A_ROW 2
+// #define LOG_ENABLED
 
 struct termios origterm;
 
@@ -36,11 +37,15 @@ Game *game;
 FILE *logfile;
 
 void llog(const char *format, ...) {
+#ifdef LOG_ENABLED
   va_list args;
   va_start(args, format);
   vfprintf(logfile, format, args);
   fflush(logfile);
   va_end(args);
+#else
+  (void)format;
+#endif
 }
 
 void teardown(void) {
@@ -214,32 +219,132 @@ won:
   return player == 0 ? 0 : (player == 1 ? -1000 : 1000);
 }
 
-Pos aiPlay(void) {
-  Pos p = {-1, -1};
-  int max = -1001;
+// Minimax with alpha-beta pruning
+// player: 1 = human (minimizing), 2 = AI (maximizing)
+// Returns the score for the current board state
+int minimax(int grid[N][M], int depth, int isMaximizing, int alpha, int beta) {
+  // Check if game is won/lost
+  int score = assignScoreToGrid(grid);
 
-  // For each possible valid ai move
-  // Calculate the possible move of the opponent in response
-  // Repeat down for N depth level
-  // Calculate the score of this game
-  // Choose the next move based on that
+  // Terminal conditions
+  if (score == -1000 || score == 1000) {
+    // Game won - return score adjusted by depth to prefer faster wins
+    return score + (score > 0 ? -depth : depth);
+  }
 
-  int newGrid[N][M];
+  if (depth == 0) {
+    // Max depth reached - return heuristic score
+    return score;
+  }
+
+  // Check if board is full (draw)
+  int movesPossible = 0;
   for (int i = 0; i < N; i++) {
     for (int j = 0; j < M; j++) {
-      if (game->grid[i][j] > 0)
-        continue;
-      memcpy(newGrid, game->grid, N * M * sizeof(int));
-      newGrid[i][j] = 2;
-      int score = assignScoreToGrid(newGrid);
-      if (score > max) {
-        max = score;
-        p.x = i;
-        p.y = j;
+      if (grid[i][j] == 0) {
+        movesPossible = 1;
+        break;
+      }
+    }
+    if (movesPossible)
+      break;
+  }
+  if (!movesPossible) {
+    return 0; // Draw
+  }
+
+  if (isMaximizing) {
+    // AI's turn (maximize score)
+    int maxEval = -10000;
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j < M; j++) {
+        if (grid[i][j] == 0) {
+          int newGrid[N][M];
+          memcpy(newGrid, grid, N * M * sizeof(int));
+          newGrid[i][j] = 2;
+
+          int eval = minimax(newGrid, depth - 1, 0, alpha, beta);
+          maxEval = eval > maxEval ? eval : maxEval;
+          alpha = alpha > eval ? alpha : eval;
+
+          // Beta cutoff - player can force a better outcome elsewhere
+          if (beta <= alpha)
+            break;
+        }
+      }
+      if (beta <= alpha)
+        break;
+    }
+    return maxEval;
+  } else {
+    // Player's turn (minimize score)
+    int minEval = 10000;
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j < M; j++) {
+        if (grid[i][j] == 0) {
+          int newGrid[N][M];
+          memcpy(newGrid, grid, N * M * sizeof(int));
+          newGrid[i][j] = 1;
+
+          int eval = minimax(newGrid, depth - 1, 1, alpha, beta);
+
+          // If player can win, stop exploring this branch
+          if (eval == -1000 + depth - 1) {
+            return eval;
+          }
+
+          minEval = eval < minEval ? eval : minEval;
+          beta = beta < eval ? beta : eval;
+
+          // Alpha cutoff - AI can force a better outcome elsewhere
+          if (beta <= alpha)
+            break;
+        }
+      }
+      if (beta <= alpha)
+        break;
+    }
+    return minEval;
+  }
+}
+
+Pos aiPlay(void) {
+  Pos p = {-1, -1};
+  int bestScore = -10000;
+
+  llog("\n=== AI's turn ===\n");
+
+  // Try each possible move
+  for (int i = 0; i < N; i++) {
+    for (int j = 0; j < M; j++) {
+      if (game->grid[i][j] == 0) {
+        int newGrid[N][M];
+        memcpy(newGrid, game->grid, N * M * sizeof(int));
+        newGrid[i][j] = 2;
+
+        // Check if this move wins immediately
+        int score = assignScoreToGrid(newGrid);
+        if (score == 1000) {
+          llog("AI found winning move at [%d][%d]\n", i, j);
+          p.x = i;
+          p.y = j;
+          return p;
+        }
+
+        // Otherwise, use minimax to evaluate the move
+        int moveScore = minimax(newGrid, 4, 0, -10000, 10000);
+        llog("Move [%d][%d] score: %d\n", i, j, moveScore);
+
+        if (moveScore > bestScore) {
+          bestScore = moveScore;
+          p.x = i;
+          p.y = j;
+        }
       }
     }
   }
 
+  llog("AI chose [%d][%d] with score %d\n", p.x, p.y, bestScore);
   return p;
 }
 
