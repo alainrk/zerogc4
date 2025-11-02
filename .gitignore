@@ -1,3 +1,2 @@
-tetris
+bin/**
 *.dSYM
-.vscode
