@@ -20,7 +20,6 @@
 #define NUM_THREADS 8
 #define MAX_MOVES 100
 #define DEFAULT_DEPTH 6
-// #define LOG_ENABLED
 
 struct termios origterm;
 
@@ -568,10 +567,12 @@ int checkWin(int grid[N][M]) {
 void setup(void) {
   struct termios raw;
 
+#ifdef LOG_ENABLED
   logfile = fopen("/tmp/zeroglog", "w");
   if (!logfile) {
     perror("open logfile");
   }
+#endif
 
   signal(SIGINT, signal_hander);
   signal(SIGKILL, signal_hander);
@@ -617,8 +618,6 @@ void update(void) {
     game->failedInput = 0;
     game->invalidMove = 0;
 
-    // llog("Current input: '%s'\n", game->input);
-
     switch (c) {
     // Backwards to delete last char
     case 127: {
@@ -633,12 +632,7 @@ void update(void) {
         setup();
         return;
       }
-      llog("-----\n");
       pos = parseInput();
-      llog("Pos %d, %d\n", pos.x, pos.y);
-      if (game->failedInput == 1) {
-        llog("Failed pos\n");
-      }
       moveDone = 1;
       memset(game->input, 0, INPUT_BUF_LEN);
       break;
@@ -700,9 +694,10 @@ void drawGrid(int grid[N][M]) {
 }
 
 void draw(void) {
-  // Draw grid
   printf("%s%s\n      ", CLEAR_SCREEN, REPOS_CURSOR);
+
   drawGrid(game->grid);
+
   printf("\n");
 
   if (game->won) {
@@ -725,7 +720,6 @@ void draw(void) {
 int main(int argc, char *argv[]) {
   setup();
 
-  // Parse command-line arguments for depth
   if (argc > 1) {
     int depth = atoi(argv[1]);
     if (depth > 0 && depth <= 12) {
@@ -734,7 +728,8 @@ int main(int argc, char *argv[]) {
     } else {
       printf("Invalid depth. Using default depth %d. Valid range: 1-12\n",
              DEFAULT_DEPTH);
-      usleep(2000000); // Show message for 2 seconds
+      // Wait to show message
+      sleep(2);
     }
   }
 
