@@ -12,6 +12,12 @@
 #define HIDE_CURSOR "\033[?25l"
 #define SHOW_CURSOR "\033[?25h"
 
+// ANSI color codes
+#define COLOR_RESET "\x1b[0m"
+#define COLOR_RED_BOLD "\x1b[1;31m"
+#define COLOR_GREEN_BOLD "\x1b[1;32m"
+#define COLOR_BLACK_ON_WHITE "\x1b[30;47m"
+
 #define N 10
 #define M 10
 #define INPUT_BUF_LEN 10
@@ -606,6 +612,93 @@ Pos aiPlay(void) {
   return p;
 }
 
+// Find and mark winning positions in the grid
+// Returns winning player (1 or 2), or 0 if no win
+// Marks winning cells in winMark array
+int findWinningSequence(int grid[N][M], int winMark[N][M]) {
+  memset(winMark, 0, N * M * sizeof(int));
+
+  // Check all positions for 4-in-a-row
+  for (int i = 0; i < N; i++) {
+    for (int j = 0; j < M; j++) {
+      if (grid[i][j] == 0)
+        continue;
+
+      int player = grid[i][j];
+
+      // Check horizontal (right)
+      if (j + 3 < M) {
+        int match = 1;
+        for (int k = 1; k <= 3; k++) {
+          if (grid[i][j + k] != player) {
+            match = 0;
+            break;
+          }
+        }
+        if (match) {
+          for (int k = 0; k <= 3; k++) {
+            winMark[i][j + k] = 1;
+          }
+          return player;
+        }
+      }
+
+      // Check vertical (down)
+      if (i + 3 < N) {
+        int match = 1;
+        for (int k = 1; k <= 3; k++) {
+          if (grid[i + k][j] != player) {
+            match = 0;
+            break;
+          }
+        }
+        if (match) {
+          for (int k = 0; k <= 3; k++) {
+            winMark[i + k][j] = 1;
+          }
+          return player;
+        }
+      }
+
+      // Check diagonal down-right
+      if (i + 3 < N && j + 3 < M) {
+        int match = 1;
+        for (int k = 1; k <= 3; k++) {
+          if (grid[i + k][j + k] != player) {
+            match = 0;
+            break;
+          }
+        }
+        if (match) {
+          for (int k = 0; k <= 3; k++) {
+            winMark[i + k][j + k] = 1;
+          }
+          return player;
+        }
+      }
+
+      // Check diagonal down-left
+      if (i + 3 < N && j - 3 >= 0) {
+        int match = 1;
+        for (int k = 1; k <= 3; k++) {
+          if (grid[i + k][j - k] != player) {
+            match = 0;
+            break;
+          }
+        }
+        if (match) {
+          for (int k = 0; k <= 3; k++) {
+            winMark[i + k][j - k] = 1;
+          }
+          return player;
+        }
+      }
+    }
+  }
+
+  return 0;
+}
+
 int checkWin(int grid[N][M]) {
   int score = assignScoreToGrid(grid);
   if (score == -1000)
@@ -731,6 +824,10 @@ void update(void) {
 }
 
 void drawGrid(int grid[N][M]) {
+  // Check if there's a winning sequence to highlight
+  int winMark[N][M];
+  int winner = findWinningSequence(grid, winMark);
+
   for (int j = 0; j < M && j < 26; j++) {
     printf("%c ", 'A' + j);
   }
@@ -738,7 +835,25 @@ void drawGrid(int grid[N][M]) {
   for (int i = 0; i < N; i++) {
     printf(" %02d |", i + 1);
     for (int j = 0; j < M; j++) {
-      printf(" %c", grid[i][j] == 0 ? '.' : (grid[i][j] == 1 ? 'X' : 'O'));
+      if (grid[i][j] == 0) {
+        printf(" .");
+      } else {
+        // Determine color
+        const char *color;
+        if (winner && winMark[i][j]) {
+          // Winning piece: black on white
+          color = COLOR_BLACK_ON_WHITE;
+        } else if (grid[i][j] == 1) {
+          // Player X: red bold
+          color = COLOR_RED_BOLD;
+        } else {
+          // Player O (AI): green bold
+          color = COLOR_GREEN_BOLD;
+        }
+
+        char piece = grid[i][j] == 1 ? 'X' : 'O';
+        printf(" %s%c%s", color, piece, COLOR_RESET);
+      }
     }
     printf("\n");
   }
