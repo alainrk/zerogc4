@@ -473,19 +473,19 @@ int minimax(int grid[N][M], int depth, int isMaximizing, int alpha, int beta) {
 
 // Calculate adaptive search depth based on game state
 int getAdaptiveDepth(int moveNo) {
-  // Early game (first 6 moves): use shallow depth for speed
-  if (moveNo < 6) {
+  // Very early game (first 4 moves): use shallow depth for speed
+  if (moveNo < 4) {
     return 3; // Very fast for opening moves
   }
-  // Early-mid game (6-12 moves): gradually increase
-  else if (moveNo < 12) {
-    return 4;
+  // Early game (4-8 moves): increase quickly
+  else if (moveNo < 8) {
+    return 5;
   }
-  // Mid game (12-20 moves): standard depth
-  else if (moveNo < 20) {
+  // Mid game (8-12 moves): near full depth
+  else if (moveNo < 12) {
     return game->searchDepth - 1; // One less than user setting
   }
-  // Late game (20+ moves): use maximum depth for precise endgame
+  // Late game (12+ moves): use maximum depth
   else {
     return game->searchDepth;
   }
