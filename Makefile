@@ -1,3 +1,6 @@
+clean:
+	rm -f bin/*
+
 build:
 	gcc -lpthread -Wall -Wextra -O2 -pedantic -o bin/game game.c 
 

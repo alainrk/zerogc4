@@ -69,6 +69,7 @@ void draw(void);
 void threadPool_init(void);
 void threadPool_wait(void);
 void threadPool_destroy(void);
+int getAdaptiveDepth(int moveNo);
 int minimax(int grid[N][M], int depth, int isMaximizing, int alpha, int beta);
 
 void llog(const char *format, ...) {
@@ -290,7 +291,8 @@ void *worker_thread(void *arg) {
 
     // Process task (outside of lock)
     MoveTask *task = pool->tasks[task_idx];
-    task->score = minimax(task->grid, game->searchDepth, 0, -10000, 10000);
+    int adaptiveDepth = getAdaptiveDepth(game->moveNo);
+    task->score = minimax(task->grid, adaptiveDepth, 0, -10000, 10000);
     task->completed = 1;
 
     // Mark thread as done with this task
@@ -469,11 +471,60 @@ int minimax(int grid[N][M], int depth, int isMaximizing, int alpha, int beta) {
   }
 }
 
+// Calculate adaptive search depth based on game state
+int getAdaptiveDepth(int moveNo) {
+  // Early game (first 6 moves): use shallow depth for speed
+  if (moveNo < 6) {
+    return 3; // Very fast for opening moves
+  }
+  // Early-mid game (6-12 moves): gradually increase
+  else if (moveNo < 12) {
+    return 4;
+  }
+  // Mid game (12-20 moves): standard depth
+  else if (moveNo < 20) {
+    return game->searchDepth - 1; // One less than user setting
+  }
+  // Late game (20+ moves): use maximum depth for precise endgame
+  else {
+    return game->searchDepth;
+  }
+}
+
 Pos aiPlay(void) {
   Pos p = {-1, -1};
   int bestScore = -10000;
 
   llog("\n=== AI's turn ===\n");
+
+  // Opening book: first AI move (moveNo will be 1 if human played first)
+  if (game->moveNo <= 1) {
+    // Try center column positions from middle outward
+    int centerCol = M / 2;
+    int positions[][2] = {
+        {N / 2, centerCol},     // Center
+        {N / 2 - 1, centerCol}, // Above center
+        {N / 2 + 1, centerCol}, // Below center
+        {N / 2, centerCol - 1}, // Left of center
+        {N / 2, centerCol + 1}  // Right of center
+    };
+
+    for (int i = 0; i < 5; i++) {
+      int row = positions[i][0];
+      int col = positions[i][1];
+      if (row >= 0 && row < N && col >= 0 && col < M &&
+          game->grid[row][col] == 0) {
+        p.x = row;
+        p.y = col;
+        llog("AI using opening book: position [%d][%d]\n", p.x, p.y);
+        return p;
+      }
+    }
+  }
+
+  // Calculate adaptive search depth based on move number
+  int adaptiveDepth = getAdaptiveDepth(game->moveNo);
+  llog("Using adaptive depth: %d (moveNo: %d)\n", adaptiveDepth, game->moveNo);
 
   // First pass: check for immediate winning moves
   for (int i = 0; i < N; i++) {
@@ -705,7 +756,8 @@ void draw(void) {
            game->won == 1 ? "won!" : "lose...");
     fflush(stdout);
   } else if (game->aiThinking) {
-    printf("AI thinking (depth %d, %d threads)...\n", game->searchDepth,
+    int adaptiveDepth = getAdaptiveDepth(game->moveNo);
+    printf("AI thinking (depth %d, %d threads)...\n", adaptiveDepth,
            NUM_THREADS);
   } else {
     // Draw input buf
@@ -713,7 +765,9 @@ void draw(void) {
            game->invalidMove
                ? "Invalid move, cell alreay set or out of bound."
                : (game->failedInput ? "Invalid input" : game->input));
-    printf("AI search depth: %d\n", game->searchDepth);
+    int adaptiveDepth = getAdaptiveDepth(game->moveNo);
+    printf("AI search depth: %d (adaptive, max: %d)\n", adaptiveDepth,
+           game->searchDepth);
   }
 }
 
